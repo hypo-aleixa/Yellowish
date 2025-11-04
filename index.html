@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root { --pink:#ff5f9e; --light:#fffafc; }
+
+body {
+  margin:0;
+  font-family:'Poppins',sans-serif;
+  color:var(--light);
+  background: linear-gradient(120deg,#8ec5fc,#e0c3fc);
+  background-size: 400% 400%;
+  animation: gradientShift 20s ease infinite;
+  overflow-x:hidden;
+}
+
+@keyframes gradientShift {0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+
+.section{width:100%;text-align:center;padding:28px 12px;position:relative}
+.hidden{display:none}
+
+button{cursor:pointer;border:none;border-radius:12px;padding:14px 30px;font-size:1.1rem;font-weight:600;background:var(--pink);color:#fff;transition:0.2s}
+button:hover{transform:scale(1.05);box-shadow:0 4px 12px rgba(0,0,0,0.3)}
+button:active{transform:scale(0.98)}
+
+input{padding:12px 16px;border-radius:12px;border:none;font-size:1rem;text-align:center;margin-bottom:12px;width:60%;max-width:300px;}
+
+#catchGameArea,#clickRaceArea{background:rgba(255,255,255,0.15);border-radius:16px;margin:0 auto;width:90%;max-width:400px}
+#catchGameArea{position:relative;height:300px;overflow:hidden}
+#basket{position:absolute;bottom:10px;width:80px;height:40px;background:var(--pink);border-radius:20px;left:50%;transform:translateX(-50%)}
+.falling-item{position:absolute;font-size:28px;pointer-events:none}
+
+#clickRaceArea{height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+
+#memoryGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(72px,1fr));gap:12px;justify-content:center;margin-top:12px;max-width:320px;margin-left:auto;margin-right:auto}
+.tile{aspect-ratio:1/1;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;color:var(--pink);font-size:1.6rem;cursor:pointer;user-select:none;transition:0.2s}
+.tile.revealed{background:var(--pink);color:#fff}
+.tile.matched{background:#ffb6c1;color:#fff;cursor:default}
+
+#letterBox{display:none;width:90%;max-width:900px;margin:28px auto;padding:22px;border-radius:16px;background:linear-gradient(135deg,#ffb6c1,#ff5f9e);box-shadow:0 10px 40px rgba(0,0,0,0.25);color:var(--light);white-space:pre-wrap;line-height:1.6;text-align:left;font-size:1rem;overflow-y:auto;max-height:80vh}
+
+#revealBtn,#restartBtn{margin:20px auto;animation:glow 2s infinite alternate;display:inline-block}
+
+@keyframes glow{from{box-shadow:0 0 5px #fff}to{box-shadow:0 0 20px var(--pink)}}
+
+@media(max-width:768px){button{width:80%;font-size:1rem;padding:12px 24px}#catchGameArea,#clickRaceArea{width:95%;height:250px}#letterBox{font-size:0.9rem;padding:16px}}
+@media(max-width:480px){.section p{font-size:0.95rem}#memoryGrid{grid-template-columns:repeat(3,1fr);gap:8px}.tile{font-size:1.4rem}}
+</style>
+</head>
+<body>
+
+<!-- NAME CHECK -->
+<div class="section" id="nameSection">
+  <p>🌸 What's your name?</p>
+  <input type="text" id="userName" placeholder="Enter your name" />
+  <br>
+  <button id="nameSubmit">Enter</button>
+  <p id="nameError" style="color:#000000; display:none;">Sorry, you are not supposed to be here. Please leave immediately.</p>
+  <p id="greeting" style="color:#fffafc; display:none; margin-top:12px;"></p>
+</div>
+
+<!-- CATCH GAME -->
+<div class="section hidden" id="catchGame">
+  <p>🍓 Catch 10 falling strawberries!</p>
+  <div id="catchGameArea"><div id="basket"></div></div>
+</div>
+
+<!-- CLICK RACE -->
+<div class="section hidden" id="clickRace">
+  <p>⚡ Click as fast as you can! (30 clicks)</p>
+  <div id="clickRaceArea">
+    <button id="raceBtn">Click Me!</button>
+    <p id="clickCount">0 / 30</p>
+  </div>
+</div>
+
+<!-- MEMORY CHALLENGE -->
+<div class="section hidden" id="memoryChallenge">
+  <p>🧠 Match 6 pairs (relaxed pace)</p>
+  <div id="memoryGrid"></div>
+</div>
+
+<!-- REVEAL LETTER -->
+<div class="section hidden" id="revealSection">
+  <button id="revealBtn">Reveal the Message 💌</button>
+  <div id="letterBox"></div>
+  <button id="restartBtn" class="hidden">Restart Adventure 🔄</button>
+</div>
+
+<!-- AUDIO FILES -->
+<audio id="musicPlayer" preload="auto" loop>
+  <source src="Orange & Lemons - Heaven Knows (Lyrics) [kxcqIfuco5g].mp3" type="audio/mpeg">
+</audio>
+<audio id="clickSound" src="click.mp3" preload="auto"></audio>
+<audio id="catchSound" src="catch.mp3" preload="auto"></audio>
+<audio id="confettiSound" src="confetti.mp3" preload="auto"></audio>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+
+  const nameSection=document.getElementById('nameSection');
+  const userName=document.getElementById('userName');
+  const nameSubmit=document.getElementById('nameSubmit');
+  const nameError=document.getElementById('nameError');
+  const greeting=document.getElementById('greeting');
+
+  const catchGame=document.getElementById('catchGame');
+  const clickRace=document.getElementById('clickRace');
+  const memoryChallenge=document.getElementById('memoryChallenge');
+  const revealSection=document.getElementById('revealSection');
+  const revealBtn=document.getElementById('revealBtn');
+  const restartBtn=document.getElementById('restartBtn');
+  const letterBox=document.getElementById('letterBox');
+
+  const music=document.getElementById('musicPlayer');
+  const clickSound=document.getElementById('clickSound');
+  const catchSound=document.getElementById('catchSound');
+  const confettiSound=document.getElementById('confettiSound');
+
+  function confettiBurst(){ confetti({particleCount:150,spread:90,origin:{y:0.6}}); confettiSound.currentTime=0; confettiSound.play(); }
+
+  function changeBackground(level){
+    switch(level){
+      case 'catch': document.body.style.background='linear-gradient(120deg,#ff9a9e,#fad0c4)'; break;
+      case 'click': document.body.style.background='linear-gradient(120deg,#a1c4fd,#c2e9fb)'; break;
+      case 'memory': document.body.style.background='linear-gradient(120deg,#fbc2eb,#a6c1ee)'; break;
+      case 'letter': document.body.style.background='linear-gradient(120deg,#ffecd2,#fcb69f)'; break;
+      default: document.body.style.background='linear-gradient(120deg,#8ec5fc,#e0c3fc)';
+    }
+  }
+
+  function resetGame(){
+    [catchGame,clickRace,memoryChallenge,revealSection].forEach(s=>s.classList.add('hidden'));
+    letterBox.style.display='none';
+    revealBtn.disabled=false;
+    restartBtn.classList.add('hidden');
+    nameSection.classList.remove('hidden');
+    music.pause(); music.currentTime=0;
+    userName.value=''; greeting.style.display='none';
+  }
+
+  nameSubmit.addEventListener('click',()=>{
+    if(userName.value.trim().toUpperCase()==='DAISY'){
+      nameError.style.display='none';
+      greeting.style.display='block';
+      greeting.textContent=`Hello Daisy! 🌸 Your adventure begins now!`;
+
+      nameSection.classList.add('hidden');
+      catchGame.classList.remove('hidden');
+      changeBackground('catch');
+
+      startCatchGame(()=>{
+        confettiBurst();
+        catchGame.classList.add('hidden');
+        clickRace.classList.remove('hidden');
+        changeBackground('click');
+        startClickRace(()=>{
+          confettiBurst();
+          clickRace.classList.add('hidden');
+          memoryChallenge.classList.remove('hidden');
+          changeBackground('memory');
+          startMemoryGame(()=>{
+            confettiBurst();
+            memoryChallenge.classList.add('hidden');
+            revealSection.classList.remove('hidden');
+            revealBtn.style.display='inline-block';
+            changeBackground('letter');
+          });
+        });
+      });
+
+    } else {
+      nameError.style.display='block';
+    }
+  });
+
+  restartBtn.addEventListener('click', resetGame);
+
+  // HARDER CATCH GAME
+  function startCatchGame(onComplete){
+    const area=document.getElementById('catchGameArea'); const basket=document.getElementById('basket');
+    let score=0,items=[];
+    function spawn(){ const i=document.createElement('div'); i.textContent='🍓'; i.className='falling-item';
+      i.style.left=Math.random()*(area.clientWidth-30)+'px'; i.style.top='0px'; area.appendChild(i); items.push(i);}
+    function moveBasket(e){ const touch=e.touches?e.touches[0].clientX:e.clientX;
+      const x=touch-area.getBoundingClientRect().left-basket.offsetWidth/2;
+      basket.style.left=Math.max(0,Math.min(x,area.clientWidth-basket.offsetWidth))+'px';}
+    area.addEventListener('mousemove',moveBasket);
+    area.addEventListener('touchmove',moveBasket,{passive:false});
+    const loop=setInterval(()=>{
+      if(Math.random()<0.5) spawn(); // more frequent
+      items.forEach((it,i)=>{
+        let y=parseFloat(it.style.top)+6; // faster
+        it.style.top=y+'px';
+        const br=basket.getBoundingClientRect(), ir=it.getBoundingClientRect();
+        if(ir.bottom>br.top&&ir.left<br.right&&ir.right>br.left){ it.remove(); items.splice(i,1); score++;
+          catchSound.currentTime=0; catchSound.play();
+          if(score>=10){ clearInterval(loop); area.removeEventListener('mousemove',moveBasket); area.removeEventListener('touchmove',moveBasket); onComplete();}
+        } else if(y>area.clientHeight){ it.remove(); items.splice(i,1);}
+      });
+    },50);
+  }
+
+  // HARDER CLICK RACE
+  function startClickRace(onComplete){
+    const btn=document.getElementById('raceBtn'); const count=document.getElementById('clickCount'); let clicks=0;
+    btn.style.position='relative';
+    const increment=()=>{
+      clicks++; count.textContent=`${clicks} / 30`; clickSound.currentTime=0; clickSound.play();
+      btn.style.left=(Math.random()*10-5)+'px';
+      btn.style.top=(Math.random()*10-5)+'px';
+      if(clicks>=30) onComplete();
+    };
+    btn.onclick=increment;
+    document.addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter'){ increment(); e.preventDefault(); }});
+  }
+
+  // MEMORY GAME (RELAXED)
+  function startMemoryGame(onComplete){
+    const grid=document.getElementById('memoryGrid');
+    const symbols=['💖','💫','🌹','💋','🌈','✨'];
+    const cards=[...symbols,...symbols].sort(()=>Math.random()-0.5);
+    grid.innerHTML='';
+    cards.forEach(sym=>{ const c=document.createElement('div'); c.className='tile'; c.textContent='?'; c.dataset.symbol=sym; c.dataset.state='hidden'; grid.appendChild(c);});
+    let first=null,matched=0,lock=false;
+    grid.onclick=(e)=>{
+      const c=e.target; if(!c.classList.contains('tile')||lock||c.dataset.state!=='hidden') return;
+      c.textContent=c.dataset.symbol; c.classList.add('revealed'); c.dataset.state='revealed';
+      if(!first){ first=c; return; }
+      if(first.dataset.symbol===c.dataset.symbol){
+        first.dataset.state='matched'; c.dataset.state='matched';
+        first.classList.add('matched'); c.classList.add('matched');
+        matched+=2; first=null; clickSound.currentTime=0; clickSound.play();
+        if(matched===cards.length) onComplete();
+      } else { lock=true; const f=first; setTimeout(()=>{
+        f.textContent='?'; f.dataset.state='hidden'; f.classList.remove('revealed');
+        c.textContent='?'; c.dataset.state='hidden'; c.classList.remove('revealed');
+        first=null; lock=false;
+      },600);}
+    };
+  }
+
+  revealBtn.addEventListener('click',async()=>{
+    revealBtn.disabled=true;
+    try{ await music.play(); }catch(e){console.log("Autoplay blocked");}
+    confettiBurst();
+    letterBox.style.display='block';
+    const message=`Hey Flower nako,
+
+I’ve been thinking about us a lot lately, about how everything used to feel so natural, and how somewhere along the way, I stopped appreciating what we had. Losing you made me realize how much I took you for granted. I used to think we’d always find our way back to each other no matter what, but when the silence finally came, it hit me just how much I had lost. It’s crazy how the absence of someone can make you see things you were blind to before. The little ways you cared, the effort you put in, and the patience you showed even when I didn’t make it easy.
+
+The truth is, I made mistakes. I let my pride and my stubbornness get in the way of being the person you needed me to be. I didn’t listen enough, I didn’t communicate enough, and I didn’t realize that love needs to be protected, not just assumed. When you left, I kept trying to distract myself, pretending I was fine, but deep down, I knew I wasn’t. I missed the way we could talk about anything, how your presence made even the worst days bearable, and how being with you felt like home. That kind of connection doesn’t just disappear, no matter how much time passes, no erased conversation could erase such memories.
+
+You still live inside my heart, even after everything. I think about you in the quiet moments, not in a desperate way, but in a way that reminds me of what real love feels like. You left a shadow that I can’t just shake off. Losing you taught me more about myself than I ever expected. It showed me the parts of me I need to fix and the kind of person I want to become someone who doesn’t let the best thing in his life slip away because she couldn’t admit she was wrong.
+
+If I ever get the chance to hold you again, I promise it won’t be the same. It’ll be softer, more patient, more honest. I’d hold you like I finally understand what it means to love, not to possess, but to protect. I imagine us laughing again, maybe sitting in the same spots we used to, but with a new kind of peace between us. I know it won’t be easy, and I don’t expect things to go back to how they were. I just hope that maybe, someday, we can build something even better, something real and lasting.
+
+I’m not writing this to pressure you or to ask for something you’re not ready to give. I just want you to know that I still care, that I still think about you, and that I’d give anything for another chance kabalo ko i've ask for many chances already, but this chance is not to repeat what we had, but to rebuild something better, something honest. Maybe time will heal the rest, maybe it won’t, but if it ever leads you back to me, I’ll be ready. Because no matter how much I try to move forward, a part of me will always belong to you.
+
+- Alexa`;
+
+    let idx=0; letterBox.textContent='';
+    function typeLetter(){ if(idx<message.length){ letterBox.textContent+=message[idx]; idx++; setTimeout(typeLetter,20); }}
+    typeLetter();
+    restartBtn.classList.remove('hidden');
+  });
+
+});
+</script>
+</body>
+</html>
