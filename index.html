@@ -40,7 +40,24 @@ input{padding:12px 16px;border-radius:12px;border:none;font-size:1rem;text-align
 .tile.revealed{background:var(--pink);color:#fff}
 .tile.matched{background:#ffb6c1;color:#fff;cursor:default}
 
-#letterBox{display:none;width:90%;max-width:900px;margin:28px auto;padding:22px;border-radius:16px;background:linear-gradient(135deg,#ffb6c1,#ff5f9e);box-shadow:0 10px 40px rgba(0,0,0,0.25);color:var(--light);white-space:pre-wrap;line-height:1.6;text-align:left;font-size:1rem;overflow-y:auto;max-height:80vh}
+#letterBox{
+  display:none;
+  width:90%;
+  max-width:900px;
+  margin:28px auto;
+  padding:22px;
+  border-radius:16px;
+  background:linear-gradient(135deg,#ffb6c1,#ff5f9e);
+  box-shadow:0 10px 40px rgba(0,0,0,0.25);
+  color:var(--light);
+  white-space:pre-wrap;
+  line-height:1.6;
+  text-align:left;
+  font-size:1rem;
+  overflow-y: auto;
+  max-height: 80vh;
+  word-break: break-word; /* Add this line */
+}
 
 #revealBtn,#restartBtn{margin:20px auto;animation:glow 2s infinite alternate;display:inline-block}
 
@@ -100,156 +117,226 @@ input{padding:12px 16px;border-radius:12px;border:none;font-size:1rem;text-align
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded',()=>{
+document.addEventListener('DOMContentLoaded', () => {
+  const nameSection = document.getElementById('nameSection');
+  const userName = document.getElementById('userName');
+  const nameSubmit = document.getElementById('nameSubmit');
+  const nameError = document.getElementById('nameError');
+  const greeting = document.getElementById('greeting');
 
-  const nameSection=document.getElementById('nameSection');
-  const userName=document.getElementById('userName');
-  const nameSubmit=document.getElementById('nameSubmit');
-  const nameError=document.getElementById('nameError');
-  const greeting=document.getElementById('greeting');
+  const catchGame = document.getElementById('catchGame');
+  const clickRace = document.getElementById('clickRace');
+  const memoryChallenge = document.getElementById('memoryChallenge');
+  const revealSection = document.getElementById('revealSection');
+  const revealBtn = document.getElementById('revealBtn');
+  const restartBtn = document.getElementById('restartBtn');
+  const letterBox = document.getElementById('letterBox');
 
-  const catchGame=document.getElementById('catchGame');
-  const clickRace=document.getElementById('clickRace');
-  const memoryChallenge=document.getElementById('memoryChallenge');
-  const revealSection=document.getElementById('revealSection');
-  const revealBtn=document.getElementById('revealBtn');
-  const restartBtn=document.getElementById('restartBtn');
-  const letterBox=document.getElementById('letterBox');
+  const music = document.getElementById('musicPlayer');
+  const clickSound = document.getElementById('clickSound');
+  const catchSound = document.getElementById('catchSound');
+  const confettiSound = document.getElementById('confettiSound');
 
-  const music=document.getElementById('musicPlayer');
-  const clickSound=document.getElementById('clickSound');
-  const catchSound=document.getElementById('catchSound');
-  const confettiSound=document.getElementById('confettiSound');
-
-  function confettiBurst(){ confetti({particleCount:150,spread:90,origin:{y:0.6}}); confettiSound.currentTime=0; confettiSound.play(); }
-
-  function changeBackground(level){
-    switch(level){
-      case 'catch': document.body.style.background='linear-gradient(120deg,#ff9a9e,#fad0c4)'; break;
-      case 'click': document.body.style.background='linear-gradient(120deg,#a1c4fd,#c2e9fb)'; break;
-      case 'memory': document.body.style.background='linear-gradient(120deg,#fbc2eb,#a6c1ee)'; break;
-      case 'letter': document.body.style.background='linear-gradient(120deg,#ffecd2,#fcb69f)'; break;
-      default: document.body.style.background='linear-gradient(120deg,#8ec5fc,#e0c3fc)';
-    }
+  function confettiBurst() {
+    confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
+    confettiSound.currentTime = 0;
+    confettiSound.play().catch(() => {});
   }
 
-  function resetGame(){
-    [catchGame,clickRace,memoryChallenge,revealSection].forEach(s=>s.classList.add('hidden'));
-    letterBox.style.display='none';
-    revealBtn.disabled=false;
+  function changeBackground(level) {
+    const bg = {
+      catch: 'linear-gradient(120deg,#ff9a9e,#fad0c4)',
+      click: 'linear-gradient(120deg,#a1c4fd,#c2e9fb)',
+      memory: 'linear-gradient(120deg,#fbc2eb,#a6c1ee)',
+      letter: 'linear-gradient(120deg,#ffecd2,#fcb69f)',
+      default: 'linear-gradient(120deg,#8ec5fc,#e0c3fc)',
+    };
+    document.body.style.background = bg[level] || bg.default;
+  }
+
+  function resetGame() {
+    [catchGame, clickRace, memoryChallenge, revealSection].forEach(s => s.classList.add('hidden'));
+    letterBox.style.display = 'none';
+    revealBtn.disabled = false;
     restartBtn.classList.add('hidden');
     nameSection.classList.remove('hidden');
-    music.pause(); music.currentTime=0;
-    userName.value=''; greeting.style.display='none';
+    music.pause();
+    music.currentTime = 0;
+    userName.value = '';
+    greeting.style.display = 'none';
   }
 
-  nameSubmit.addEventListener('click',()=>{
-    if(userName.value.trim().toUpperCase()==='DAISY'){
-      nameError.style.display='none';
-      greeting.style.display='block';
-      greeting.textContent=`Hello Daisy! 🌸 Your adventure begins now!`;
+  nameSubmit.addEventListener('click', () => {
+    if (userName.value.trim().toUpperCase() === 'DAISY') {
+      nameError.style.display = 'none';
+      greeting.style.display = 'block';
+      greeting.textContent = `Hello Daisy! 🌸 Your adventure begins now!`;
 
       nameSection.classList.add('hidden');
       catchGame.classList.remove('hidden');
       changeBackground('catch');
 
-      startCatchGame(()=>{
+      startCatchGame(() => {
         confettiBurst();
         catchGame.classList.add('hidden');
         clickRace.classList.remove('hidden');
         changeBackground('click');
-        startClickRace(()=>{
+        startClickRace(() => {
           confettiBurst();
           clickRace.classList.add('hidden');
           memoryChallenge.classList.remove('hidden');
           changeBackground('memory');
-          startMemoryGame(()=>{
+          startMemoryGame(() => {
             confettiBurst();
             memoryChallenge.classList.add('hidden');
             revealSection.classList.remove('hidden');
-            revealBtn.style.display='inline-block';
+            revealBtn.style.display = 'inline-block';
             changeBackground('letter');
           });
         });
       });
-
     } else {
-      nameError.style.display='block';
+      nameError.style.display = 'block';
     }
   });
 
   restartBtn.addEventListener('click', resetGame);
 
-  // HARDER CATCH GAME
-  function startCatchGame(onComplete){
-    const area=document.getElementById('catchGameArea'); const basket=document.getElementById('basket');
-    let score=0,items=[];
-    function spawn(){ const i=document.createElement('div'); i.textContent='🍓'; i.className='falling-item';
-      i.style.left=Math.random()*(area.clientWidth-30)+'px'; i.style.top='0px'; area.appendChild(i); items.push(i);}
-    function moveBasket(e){ const touch=e.touches?e.touches[0].clientX:e.clientX;
-      const x=touch-area.getBoundingClientRect().left-basket.offsetWidth/2;
-      basket.style.left=Math.max(0,Math.min(x,area.clientWidth-basket.offsetWidth))+'px';}
-    area.addEventListener('mousemove',moveBasket);
-    area.addEventListener('touchmove',moveBasket,{passive:false});
-    const loop=setInterval(()=>{
-      if(Math.random()<0.5) spawn(); // more frequent
-      items.forEach((it,i)=>{
-        let y=parseFloat(it.style.top)+6; // faster
-        it.style.top=y+'px';
-        const br=basket.getBoundingClientRect(), ir=it.getBoundingClientRect();
-        if(ir.bottom>br.top&&ir.left<br.right&&ir.right>br.left){ it.remove(); items.splice(i,1); score++;
-          catchSound.currentTime=0; catchSound.play();
-          if(score>=10){ clearInterval(loop); area.removeEventListener('mousemove',moveBasket); area.removeEventListener('touchmove',moveBasket); onComplete();}
-        } else if(y>area.clientHeight){ it.remove(); items.splice(i,1);}
+  // ---- Catch Game ----
+  function startCatchGame(onComplete) {
+    const area = document.getElementById('catchGameArea');
+    const basket = document.getElementById('basket');
+    let score = 0, items = [];
+
+    function spawn() {
+      const i = document.createElement('div');
+      i.textContent = '🍓';
+      i.className = 'falling-item';
+      i.style.left = Math.random() * (area.clientWidth - 30) + 'px';
+      i.style.top = '0px';
+      area.appendChild(i);
+      items.push(i);
+    }
+
+    function moveBasket(e) {
+      const touch = e.touches ? e.touches[0].clientX : e.clientX;
+      const x = touch - area.getBoundingClientRect().left - basket.offsetWidth / 2;
+      basket.style.left = Math.max(0, Math.min(x, area.clientWidth - basket.offsetWidth)) + 'px';
+    }
+
+    area.addEventListener('mousemove', moveBasket);
+    area.addEventListener('touchmove', moveBasket, { passive: false });
+
+    const loop = setInterval(() => {
+      if (Math.random() < 0.5) spawn();
+      items.forEach((it, i) => {
+        let y = parseFloat(it.style.top) + 6;
+        it.style.top = y + 'px';
+        const br = basket.getBoundingClientRect(), ir = it.getBoundingClientRect();
+        if (ir.bottom > br.top && ir.left < br.right && ir.right > br.left) {
+          it.remove(); items.splice(i, 1); score++;
+          catchSound.currentTime = 0;
+          catchSound.play();
+          if (score >= 10) {
+            clearInterval(loop);
+            area.removeEventListener('mousemove', moveBasket);
+            area.removeEventListener('touchmove', moveBasket);
+            onComplete();
+          }
+        } else if (y > area.clientHeight) { it.remove(); items.splice(i, 1); }
       });
-    },50);
+    }, 50);
   }
 
-  // HARDER CLICK RACE
-  function startClickRace(onComplete){
-    const btn=document.getElementById('raceBtn'); const count=document.getElementById('clickCount'); let clicks=0;
-    btn.style.position='relative';
-    const increment=()=>{
-      clicks++; count.textContent=`${clicks} / 30`; clickSound.currentTime=0; clickSound.play();
-      btn.style.left=(Math.random()*10-5)+'px';
-      btn.style.top=(Math.random()*10-5)+'px';
-      if(clicks>=30) onComplete();
+  // ---- Click Race ----
+  function startClickRace(onComplete) {
+    const btn = document.getElementById('raceBtn');
+    const count = document.getElementById('clickCount');
+    let clicks = 0;
+
+    const increment = () => {
+      clicks++;
+      count.textContent = `${clicks} / 30`;
+      clickSound.currentTime = 0;
+      clickSound.play();
+      if (clicks >= 30) onComplete();
     };
-    btn.onclick=increment;
-    document.addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter'){ increment(); e.preventDefault(); }});
+
+    btn.onclick = increment;
+    document.addEventListener('keydown', e => {
+      if (e.key === ' ' || e.key === 'Enter') {
+        increment();
+        e.preventDefault();
+      }
+    });
   }
 
-  // MEMORY GAME (RELAXED)
-  function startMemoryGame(onComplete){
-    const grid=document.getElementById('memoryGrid');
-    const symbols=['💖','💫','🌹','💋','🌈','✨'];
-    const cards=[...symbols,...symbols].sort(()=>Math.random()-0.5);
-    grid.innerHTML='';
-    cards.forEach(sym=>{ const c=document.createElement('div'); c.className='tile'; c.textContent='?'; c.dataset.symbol=sym; c.dataset.state='hidden'; grid.appendChild(c);});
-    let first=null,matched=0,lock=false;
-    grid.onclick=(e)=>{
-      const c=e.target; if(!c.classList.contains('tile')||lock||c.dataset.state!=='hidden') return;
-      c.textContent=c.dataset.symbol; c.classList.add('revealed'); c.dataset.state='revealed';
-      if(!first){ first=c; return; }
-      if(first.dataset.symbol===c.dataset.symbol){
-        first.dataset.state='matched'; c.dataset.state='matched';
-        first.classList.add('matched'); c.classList.add('matched');
-        matched+=2; first=null; clickSound.currentTime=0; clickSound.play();
-        if(matched===cards.length) onComplete();
-      } else { lock=true; const f=first; setTimeout(()=>{
-        f.textContent='?'; f.dataset.state='hidden'; f.classList.remove('revealed');
-        c.textContent='?'; c.dataset.state='hidden'; c.classList.remove('revealed');
-        first=null; lock=false;
-      },600);}
+  // ---- Memory Game ----
+  function startMemoryGame(onComplete) {
+    const grid = document.getElementById('memoryGrid');
+    const symbols = ['💖', '💫', '🌹', '💋', '🌈', '✨'];
+    const cards = [...symbols, ...symbols].sort(() => Math.random() - 0.5);
+    grid.innerHTML = '';
+
+    cards.forEach(sym => {
+      const c = document.createElement('div');
+      c.className = 'tile';
+      c.textContent = '?';
+      c.dataset.symbol = sym;
+      c.dataset.state = 'hidden';
+      grid.appendChild(c);
+    });
+
+    let first = null, matched = 0, lock = false;
+
+    grid.onclick = e => {
+      const c = e.target;
+      if (!c.classList.contains('tile') || lock || c.dataset.state !== 'hidden') return;
+      c.textContent = c.dataset.symbol;
+      c.classList.add('revealed');
+      c.dataset.state = 'revealed';
+
+      if (!first) { first = c; return; }
+      if (first.dataset.symbol === c.dataset.symbol) {
+        first.dataset.state = 'matched';
+        c.dataset.state = 'matched';
+        first.classList.add('matched');
+        c.classList.add('matched');
+        matched += 2;
+        clickSound.currentTime = 0;
+        clickSound.play();
+        first = null;
+        if (matched === cards.length) onComplete();
+      } else {
+        lock = true;
+        setTimeout(() => {
+          first.textContent = '?';
+          c.textContent = '?';
+          first.dataset.state = 'hidden';
+          c.dataset.state = 'hidden';
+          first.classList.remove('revealed');
+          c.classList.remove('revealed');
+          first = null;
+          lock = false;
+        }, 600);
+      }
     };
   }
 
-  revealBtn.addEventListener('click',async()=>{
-    revealBtn.disabled=true;
-    try{ await music.play(); }catch(e){console.log("Autoplay blocked");}
+  // ---- Reveal Message ----
+  revealBtn.addEventListener('click', () => {
+    revealBtn.disabled = true;
+
+    // Start music directly on click (avoids autoplay block)
+    music.currentTime = 0;
+    music.play().catch(() => {
+      console.warn("Autoplay prevented — user may need to tap again.");
+    });
+
     confettiBurst();
-    letterBox.style.display='block';
-    const message=`Hey Flower nako,
+    letterBox.style.display = 'block';
+    letterBox.innerHTML = ''; // reset
+    const message = `Hey Flower nako,
 
 I’ve been thinking about us a lot lately, about how everything used to feel so natural, and how somewhere along the way, I stopped appreciating what we had. Losing you made me realize how much I took you for granted. I used to think we’d always find our way back to each other no matter what, but when the silence finally came, it hit me just how much I had lost. It’s crazy how the absence of someone can make you see things you were blind to before. The little ways you cared, the effort you put in, and the patience you showed even when I didn’t make it easy.
 
