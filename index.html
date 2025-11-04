@@ -56,7 +56,7 @@ input{padding:12px 16px;border-radius:12px;border:none;font-size:1rem;text-align
   font-size:1rem;
   overflow-y: auto;
   max-height: 80vh;
-  word-break: break-word; /* Add this line */
+  word-break: break-word;
 }
 
 #revealBtn,#restartBtn{margin:20px auto;animation:glow 2s infinite alternate;display:inline-block}
@@ -109,7 +109,7 @@ input{padding:12px 16px;border-radius:12px;border:none;font-size:1rem;text-align
 
 <!-- AUDIO FILES -->
 <audio id="musicPlayer" preload="auto" loop>
-  <source src="Orange & Lemons - Heaven Knows (Lyrics) [kxcqIfuco5g].mp3" type="audio/mpeg">
+  <source src="heaven_knows.mp3" type="audio/mpeg">
 </audio>
 <audio id="clickSound" src="click.mp3" preload="auto"></audio>
 <audio id="catchSound" src="catch.mp3" preload="auto"></audio>
@@ -278,15 +278,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const cards = [...symbols, ...symbols].sort(() => Math.random() - 0.5);
     grid.innerHTML = '';
 
-    cards.forEach(sym => {
-      const c = document.createElement('div');
-      c.className = 'tile';
-      c.textContent = '?';
-      c.dataset.symbol = sym;
-      c.dataset.state = 'hidden';
-      grid.appendChild(c);
-    });
-
     let first = null, matched = 0, lock = false;
 
     grid.onclick = e => {
@@ -327,15 +318,13 @@ document.addEventListener('DOMContentLoaded', () => {
   revealBtn.addEventListener('click', () => {
     revealBtn.disabled = true;
 
-    // Start music directly on click (avoids autoplay block)
     music.currentTime = 0;
-    music.play().catch(() => {
-      console.warn("Autoplay prevented — user may need to tap again.");
-    });
+    music.play().catch(() => {});
 
     confettiBurst();
     letterBox.style.display = 'block';
-    letterBox.innerHTML = ''; // reset
+    letterBox.innerHTML = '';
+
     const message = `Hey Flower nako,
 
 I’ve been thinking about us a lot lately, about how everything used to feel so natural, and how somewhere along the way, I stopped appreciating what we had. Losing you made me realize how much I took you for granted. I used to think we’d always find our way back to each other no matter what, but when the silence finally came, it hit me just how much I had lost. It’s crazy how the absence of someone can make you see things you were blind to before. The little ways you cared, the effort you put in, and the patience you showed even when I didn’t make it easy.
@@ -346,7 +335,7 @@ You still live inside my heart, even after everything. I think about you in the 
 
 If I ever get the chance to hold you again, I promise it won’t be the same. It’ll be softer, more patient, more honest. I’d hold you like I finally understand what it means to love, not to possess, but to protect. I imagine us laughing again, maybe sitting in the same spots we used to, but with a new kind of peace between us. I know it won’t be easy, and I don’t expect things to go back to how they were. I just hope that maybe, someday, we can build something even better, something real and lasting.
 
-I’m not writing this to pressure you or to ask for something you’re not ready to give. I just want you to know that I still care, that I still think about you, and that I’d give anything for another chance kabalo ko i've ask for many chances already, but this chance is not to repeat what we had, but to rebuild something better, something honest. Maybe time will heal the rest, maybe it won’t, but if it ever leads you back to me, I’ll be ready. Because no matter how much I try to move forward, a part of me will always belong to you.
+I’m not writing this to pressure you or to ask for something you’re not ready to give. I just want you to know that I still care, that I still think about you, and that I’d give anything for another chance kabalo ko i've ask for many chances already, but this chance is not to repeat what we had, but to rebuild something better, something honest. Maybe time will heal the rest, maybe it won’t, but if it ever leads you back to me, I’ll be ready.  Because no matter how much I try to move forward, a part of me will always belong to you.
 
 - Alexa`;
 
